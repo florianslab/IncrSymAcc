@@ -3,20 +3,19 @@ var Parameters = {},
 
 for (parameter in URLParameters) Parameters[URLParameters[parameter].split("=")[0]] = URLParameters[parameter].split("=")[1];
 
-//var shuffleSequence = seq("instruction", "practice", rshuffle("test"), "postExp");
-var shuffleSequence = seq("practice", rshuffle("test"), "postExp");
+var shuffleSequence = seq("instruction", "practice", rshuffle("test"), "postExp");
 
 if (Parameters.hasOwnProperty("Home")) shuffleSequence = seq("home");
 
 //var practiceItemTypes = ["practice"];
 var showProgressBar = false;
 var manualSendResults = true;
-var counterOverride = 3;
+var practiceItemTypes = ["practice"];
 
 var defaults = [
     "DynamicQuestion", {
         answers: {},
-        scale: "<div><p>Completely unnatural "+
+        scale: "<div><p id='scale' style='margin: 2em; text-align: center;'>Completely unnatural "+
                "<input type='radio' name='nat' value='0' /> "+
                "<input type='radio' name='nat' value='1' /> "+
                "<input type='radio' name='nat' value='2' /> "+
@@ -34,14 +33,21 @@ var defaults = [
     }
 ];
 
-function get_sentence(sentence){
+/*function get_sentence(sentence){
     return $("<p id='sentence' style='font-family: Sans serif; font-size: 1.6em; margin-bottom: 30px;'>"+sentence+".</p>");
 }
 
-function get_inference(inference){
-    return $("<p>").append($("<p style='font-family: Sans serif; font-style: italic; font-size: 1.3em; margin-bottom: 20px;'>This leads me to conclude</p>"))
-                   .append($("<p id='inference' style='font-style: Sans serif; font-size: 1.5em;'>"+inference+".</p>"));
+function get_context(context){
+    return $("<p>").append($("<p id='context' style='font-style: Sans serif; font-size: 1.5em;'>"+context+".</p>"));
+    //.append($("<p style='font-family: Sans serif; font-style: italic; font-size: 1.3em; margin-bottom: 20px;'>This leads me to conclude</p>"))
+}*/
+
+
+function get_sentence(context, test){
+    return $("<p id='sentence' style='font-family: Sans serif; font-size: 1.6em; margin-bottom: 30px;'><span id='context'>"+context+"</span>. "+
+             "<span id='test'>"+test+"</span>.</p>");
 }
+
 
 function send_answer(answer, t){
     t.finishedCallback([[
@@ -95,21 +101,18 @@ var items = [
 
     //["instruction", "__SetCounter__", {}],
     
-    ["instruction", "Form", {html: {include: "ProlificConsentForm.html"}}],
+    //["instruction", "Form", {html: {include: "ProlificConsentForm.html"}}],
     
     ["instruction", "DynamicQuestion", {
         legend: "instruction",
-        sentence: get_sentence("A sentence that your interlocutor said"),
-        inference: get_inference("some information"),
+        //context: get_context("A horse walks into a bar"),
+        sentence: get_sentence("A horse walks into a bar", "The bartender asks: 'Why the long face?'"),
         enabled: false,
         sequence: [
-            TT("#bod", "In this experiment, you will see several sentences.", "Press Space", "mc"),
+            TT("#bod", "In this experiment, you will see shorts texts.", "Press Space", "mc"),
             {pause: "key\x01"},            
             {this: "sentence"},
-            TT("#sentence", "The first sentence on the page corresponds to what your (fictional) interlocutor said.", "Press Space", "bc"),
-            {pause: "key\x01"},
-            {this: "inference"},
-            TT("#inference", "Your role is to indicate, based on what your interlocutor said, whether you would conclude some information.", "Press Space", "bc"),
+            TT("#sentence", "Your role will be to evaluate how naturally the texts could occur in a discourse.", "Press Space", "bc"),
             {pause: "key\x01"},
             TT("#bod", "Let's practice a bit so that you get a better idea of the task.", "Press Space", "mc"),
             {pause: "key\x01"},
@@ -119,24 +122,39 @@ var items = [
     
     ["practice", "DynamicQuestion", {
         legend: "practice1",
-        sentence: get_sentence("Natalie both lives in New York and likes to run"),
-        inference: get_inference("Natalie lives in the USA"),
+        //context: get_context("Natalie is from the USA"),
+        sentence: get_sentence("Natalie is from the USA", "She lives in New York and likes to run"),
         enabled: false,
         sequence: [
+            {pause: 300},
             {this: "sentence"},
-            TT("#sentence", "Here your interlocutor said that Natalie lives in New York and likes to run.", "Press Space", "bc"),
+            {pause: 300},
+            TT("#sentence", "Nothing sounds off in this text...", "Press Space", "bc"),
             {pause: "key\x01"},
-            {this: "inference"},
-            TT("#inference", "You have to tell whether this leads you to conclude that Natalie lives in the USA.", "Press Space", "bc"),
+            TT("#sentence", "... it first says where Natalie is from, and further elaborates on where she lives and on her hobbies.", "Press Space", "bc"),
             {pause: "key\x01"},
             {this: "scale"},
             clickButton(
                 function(answer, tbis) { 
                     tbis.response = answer;
-                    if (answer < 3) TT("#click", "Wrong: the sequence is natural.", "Press Space", "tc")(tbis);
-                    else TT("#click", "Right: the sequence is natural.", "Press Space", "tc")(tbis);
+                    if (answer < 3) TT("#click", "Wrong: the text is natural.", "Press Space", "bc")(tbis);
+                    else TT("#click", "Right: the text is natural.", "Press Space", "bc")(tbis);
                 }
             ),
+            function(t){ $("#click").attr("disabled", true); },
+            TT("#scale", "Indicate on this scale how natural you think it would be for this text to form part of a discourse.", "Press Space", "bc"),
+            {pause: "key\x01"},
+            TT("#sentence", "In this case, you want to report that this text sounds natural.", "Press Space and click on the scale", "bc"),
+            {pause: "key\x01"},
+            function(t) { 
+                var clicked = false;
+                $("#scale input").click(function(){ 
+                    if (clicked) return;
+                    TT("#click", "Now click here to continue.", "Press Space", "bc")(t);
+                    clicked = true;
+                }); 
+            },
+            {pause: "key\x01"},
             {pause: "key\x01"},
             function(t){ send_answer(t.response, t); }
         ]
@@ -144,16 +162,46 @@ var items = [
     
     ["practice", "DynamicQuestion", {
         legend: "practice2",
-        sentence: get_sentence("Either Ryan studied economics or he is a self-made man"),
-        inference: get_inference("Ryan studied economics"),
+        sentence: get_sentence("Ryan has two children", "His third is already in second grade"),
+        //inference: get_context("Ryan studied economics"),
         enabled: false,
         sequence: [
+            {pause: 300},
             {this: "sentence"},
-            {this: "inference"},
             {this: "scale"},
-            clickButton(send_answer)
+            {pause: 300},
+            TT("#sentence", "Here, first Ryan is only said to have two children, but then a reference is made to his third child.", "Press Space", "bc"),
+            {pause: "key\x01"},
+            TT("#scale", "So in this case, you want to report that this text sounds UNnatural.", "Press Space and click on the scale", "bc"),
+            {pause: "key\x01"},
+            clickButton(
+                function(answer, tbis) {
+                    tbis.response = answer;
+                    if (answer > 3) TT("#click", "Wrong: the text is unnatural.", "Press Space", "bc")(tbis);
+                    else TT("#click", "Right: the text is unnatural.", "Press Space", "bc")(tbis);
+                }
+            ),
+            {pause: "key\x01"},
+            function(t){ send_answer(t.response, t); }
         ]
     }],
+
+    ["practice", "DynamicQuestion", {
+        legend: "practice3",
+        sentence: get_sentence("Ryan has two children", "His third is already in second grade"),
+        //inference: get_context("Ryan studied economics"),
+        answers: {CU: "Completely unnatural", QU: "Quite unnatural", SU: "Unnatural-ish",
+                  N: "So-so", SN: "Natural-ish", QN: "Quite natural", CN: "Completely natural"},
+        enabled: true,
+        sequence: [
+            {pause: 300},
+            {this: "sentence"},
+            //{this: "scale"},
+            {pause: 300},
+            {this: "answers"}
+        ]
+    }],    
+        
     
    ["postExp", "Form", {html: {include:"ProlificFeedbackPreConfirmation.html"}}],
     
@@ -171,15 +219,16 @@ var items = [
                       {
                         legend: function(x){ return [x.item,x.group,x.condition,x.inference_about,x.trigger,x.sentence,x.inference].join("+"); },
                         sentence: function(x){ return get_sentence(x.sentence); },
-                        inference: function(x){ return get_inference(x.inference); },
+                        //inference: function(x){ return get_context(x.inference); },
                         sequence:function(x){
                             var debug = "";
                             if (Parameters.hasOwnProperty("Debug")) 
                                 debug = "Condition: "+x.condition+" ('TrF' = Test Ps in First conjunct, 'TrL' = Test Ps in Last conjunct, '(n)P' = (non-)Ps control, 'F...' = fillers)";
                             return [
                               debug,
+                              {pause: 500},
                               {this: "sentence"},
-                              {this: "inference"},
+                              //{this: "inference"},
                               {this: "scale"},
                               clickButton(send_answer)
                             ];
