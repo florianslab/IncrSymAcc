@@ -24,7 +24,7 @@ var defaults = [
                "<input type='radio' name='nat' value='5' /> "+
                "<input type='radio' name='nat' value='6' /> "+
                " Completely natural</p>"+
-               "<a class='Message-continue-link' id='click'>Click here to continue</a></div>"
+               "<a class='DynamicQuestion-fake-link' id='click'>Click here to continue</a></div>"
     },
     "Form", {
         hideProgressBar: true,
@@ -44,8 +44,14 @@ function get_context(context){
 
 
 function get_sentence(context, test){
-    return $("<p id='sentence' style='font-family: Sans serif; font-size: 1.6em; margin-bottom: 30px;'><span id='context'>"+context+"</span>. "+
-             "<span id='test'>"+test+"</span>.</p>");
+    if (!context.match(/\.$/)) context += '.';
+    if (!test.match(/\.$/)) test += '.';
+    while (context.match(/(\s+\.|\.\.+)$/))                // Using a while because e.g. "sentence. " becomes "sentence. ." (see 'if' on context right above)
+        context = context.replace(/\s*\.+$/,'.');   // and applying replace only once would then output "sentence.." (Florian's remark re item 10 on Slack)
+    while (test.match(/(\s+\.|\.\.+)$/))
+        test = test.replace(/\s*\.+$/,'.');
+    return $("<p id='sentence' style='font-family: Sans serif; font-size: 1.6em; margin-bottom: 30px;'><span id='context'>"+context+"</span> "+
+             "<span id='test'>"+test+"</span></p>");
 }
 
 
@@ -78,7 +84,7 @@ function clickButton(callback) {
 
 var items = [
 
-    ["home", "Message", {
+    /*["home", "Message", {
         html: "<div style='text-align:center;'>"+
               "<p style='font-weight:bold;'>Please select which version of the experiment you want to access.</p>"+
               "<table style='margin: auto;'>"+
@@ -97,7 +103,7 @@ var items = [
               "(You can enter whatever as a Prolific ID on the first page)"+
               "</div>",
         transfer: null
-    }],
+    }],*/
 
     //["instruction", "__SetCounter__", {}],
     
@@ -106,10 +112,10 @@ var items = [
     ["instruction", "DynamicQuestion", {
         legend: "instruction",
         //context: get_context("A horse walks into a bar"),
-        sentence: get_sentence("A horse walks into a bar", "The bartender asks: 'Why the long face?'"),
+        sentence: get_sentence("A horse walks into a bar.", "The bartender asks: 'Why the long face?'"),
         enabled: false,
         sequence: [
-            TT("#bod", "In this experiment, you will see shorts texts.", "Press Space", "mc"),
+            TT("#bod", "In this experiment, you will see short texts.", "Press Space", "mc"),
             {pause: "key\x01"},            
             {this: "sentence"},
             TT("#sentence", "Your role will be to evaluate how naturally the texts could occur in a discourse.", "Press Space", "bc"),
@@ -123,7 +129,7 @@ var items = [
     ["practice", "DynamicQuestion", {
         legend: "practice1",
         //context: get_context("Natalie is from the USA"),
-        sentence: get_sentence("Natalie is from the USA", "She lives in New York and likes to run"),
+        sentence: get_sentence("Natalie is from the USA.", "She lives in New York and likes to run"),
         enabled: false,
         sequence: [
             {pause: 300},
@@ -135,13 +141,13 @@ var items = [
             {pause: "key\x01"},
             {this: "scale"},
             clickButton(
-                function(answer, tbis) { 
-                    tbis.response = answer;
-                    if (answer < 3) TT("#click", "Wrong: the text is natural.", "Press Space", "bc")(tbis);
-                    else TT("#click", "Right: the text is natural.", "Press Space", "bc")(tbis);
+                function(answer, t) { 
+                    t.response = answer;
+                    if (answer < 3) TT("#click", "Wrong: the text is natural.", "Press Space", "bc")(t);
+                    else TT("#click", "Right: the text is natural.", "Press Space", "bc")(t);
                 }
             ),
-            function(t){ $("#click").attr("disabled", true); },
+            function(t){ $("#click, #scale input").attr("disabled", true); },
             TT("#scale", "Indicate on this scale how natural you think it would be for this text to form part of a discourse.", "Press Space", "bc"),
             {pause: "key\x01"},
             TT("#sentence", "In this case, you want to report that this text sounds natural.", "Press Space and click on the scale", "bc"),
@@ -153,6 +159,7 @@ var items = [
                     TT("#click", "Now click here to continue.", "Press Space", "bc")(t);
                     clicked = true;
                 }); 
+                $("#click, #scale input").removeAttr("disabled");
             },
             {pause: "key\x01"},
             {pause: "key\x01"},
@@ -162,18 +169,23 @@ var items = [
     
     ["practice", "DynamicQuestion", {
         legend: "practice2",
-        sentence: get_sentence("Ryan has two children", "His third is already in second grade"),
-        //inference: get_context("Ryan studied economics"),
+        //sentence: get_sentence("Ryan has two children.", "His third is already in second grade"),
+        sentence: get_sentence("Ana forgot to water her plants, and not a single one survived.", "Now some of Ana's plants are dead."),
         enabled: false,
         sequence: [
             {pause: 300},
             {this: "sentence"},
             {this: "scale"},
-            {pause: 300},
-            TT("#sentence", "Here, first Ryan is only said to have two children, but then a reference is made to his third child.", "Press Space", "bc"),
+            function(t){ $("#click, #scale input").attr("disabled", true); },
+            {pause: 500},
+            //TT("#sentence", "Here, Ryan is only said to have two children first, but then a reference is made to his third child.", "Press Space", "bc"),
+            TT("#sentence", "Here, the text first says that none of Ana's plants survived, and then it goes on saying that some of them are dead.", "Press Space", "bc"),
             {pause: "key\x01"},
-            TT("#scale", "So in this case, you want to report that this text sounds UNnatural.", "Press Space and click on the scale", "bc"),
+            TT("#sentence", "Something sounds off in this text: one would expect the conclusion to be that <i>all</i> of Ana's plants are dead.", "Press Space", "bc"),
             {pause: "key\x01"},
+            TT("#scale", "So in this case, you want to report that the text sounds UNnatural.", "Press Space and click on the scale", "bc"),
+            {pause: "key\x01"},
+            function(t){ $("#click, #scale input").removeAttr("disabled"); },
             clickButton(
                 function(answer, tbis) {
                     tbis.response = answer;
@@ -186,7 +198,7 @@ var items = [
         ]
     }],
 
-    ["practice", "DynamicQuestion", {
+    /*["practice", "DynamicQuestion", {
         legend: "practice3",
         sentence: get_sentence("Ryan has two children", "His third is already in second grade"),
         //inference: get_context("Ryan studied economics"),
@@ -200,8 +212,10 @@ var items = [
             {pause: 300},
             {this: "answers"}
         ]
-    }],    
+    }], */   
         
+    
+   ["practice", "Message", {html: "Good. Now we are going to start the actual experiment. Press any key to continue.", transfer: "keypress"}],
     
    ["postExp", "Form", {html: {include:"ProlificFeedbackPreConfirmation.html"}}],
     
@@ -218,15 +232,15 @@ var items = [
                       "DynamicQuestion",            // Controller
                       {
                         legend: function(x){ return [x.item,x.group,x.condition,x.inference_about,x.trigger,x.sentence,x.inference].join("+"); },
-                        sentence: function(x){ return get_sentence(x.sentence); },
+                        sentence: function(x){ return get_sentence(x.Context,x.sentence); },
                         //inference: function(x){ return get_context(x.inference); },
                         sequence:function(x){
                             var debug = "";
                             if (Parameters.hasOwnProperty("Debug")) 
-                                debug = "Condition: "+x.condition+" ('TrF' = Test Ps in First conjunct, 'TrL' = Test Ps in Last conjunct, '(n)P' = (non-)Ps control, 'F...' = fillers)";
+                                debug = "Item: "+x.item+"; Group: "+x.group+"; Context: "+x.ContextType+"; Order: "+x.internal_order+"; Type: "+x.type+"; Condition: "+x.condition;
                             return [
                               debug,
-                              {pause: 500},
+                              {pause: 250},
                               {this: "sentence"},
                               //{this: "inference"},
                               {this: "scale"},
