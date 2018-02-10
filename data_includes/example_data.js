@@ -3,7 +3,7 @@ var Parameters = {},
 
 for (parameter in URLParameters) Parameters[URLParameters[parameter].split("=")[0]] = URLParameters[parameter].split("=")[1];
 
-var shuffleSequence = seq("instruction", "practice", rshuffle("test"), "postExp");
+var shuffleSequence = seq("id", "instruction", "practice", rshuffle("test"));
 
 if (Parameters.hasOwnProperty("Home")) shuffleSequence = seq("home");
 
@@ -108,6 +108,8 @@ var items = [
     //["instruction", "__SetCounter__", {}],
     
     //["instruction", "Form", {html: {include: "ProlificConsentForm.html"}}],
+
+    ["id", "Form", {html: {include: "ID.html"}, continueOnReturn: true}],
     
     ["instruction", "DynamicQuestion", {
         legend: "instruction",
@@ -231,7 +233,7 @@ var items = [
                       "test",                       // Label of the item
                       "DynamicQuestion",            // Controller
                       {
-                        legend: function(x){ return [x.item,x.group,x.condition,x.inference_about,x.trigger,x.sentence,x.inference].join("+"); },
+                        legend: function(x){ return [x.item,x.group,x.condition,x.ContextType,x.inference_about,x.trigger,x.sentence,x.inference].join("+"); },
                         sentence: function(x){ return get_sentence(x.Context,x.sentence); },
                         //inference: function(x){ return get_context(x.inference); },
                         sequence:function(x){

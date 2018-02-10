@@ -63,7 +63,7 @@ li.normal-answer {
 li:hover.normal-answer {
     cursor: pointer;
 }
-li.scale-box {
+.scale-box {
     float: left;
     list-style: none;
     margin-left: 2em;
@@ -73,20 +73,20 @@ li.scale-box {
     text-align: center;
 }
 
-li.scale-box a {
+.scale-box a {
     text-decoration: none; 
     display: block;
     vertical-align: middle;
 }
-li.scale-box a:hover {
+.scale-box a:hover {
     text-decoration: none;
     display: block;
     vertical-align: middle;
 }
-span.fake-link {
+.fake-link {
     color: blue;
     cursor: pointer;
 }
-span:hover.fake-link {
+.fake-link:hover {
     cursor: pointer;
 }
