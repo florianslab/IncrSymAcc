@@ -9,7 +9,7 @@ if (Parameters.hasOwnProperty("Home")) shuffleSequence = seq("home");
 
 //var practiceItemTypes = ["practice"];
 var showProgressBar = false;
-var manualSendResults = true;
+//var manualSendResults = true;
 var practiceItemTypes = ["practice"];
 
 var defaults = [
@@ -219,12 +219,14 @@ var items = [
     
    ["practice", "Message", {html: "Good. Now we are going to start the actual experiment. Press any key to continue.", transfer: "keypress"}],
     
+   /*
    ["postExp", "Form", {html: {include:"ProlificFeedbackPreConfirmation.html"}}],
     
    ["postExp", "__SendResults__", {}],
    
    ["postExp", "Message", {html: {include: "ProlificConfirmation.html"}, transfer: null}]
-    
+   */
+
     ].concat(
       GetItemsFrom(data, null,
         {
